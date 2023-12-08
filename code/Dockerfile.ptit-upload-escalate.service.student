@@ -1,0 +1,54 @@
+ARG registry
+FROM $registry/labtainer.base2
+#FROM $registry/labtainer.network
+#FROM $registry/labtainer.centos
+#FROM $registry/labtainer.lamp
+#FROM $registry/labtainer.lamp.xtra
+ARG lab
+ARG labdir
+ARG imagedir
+ARG user_name
+ARG password
+ARG apt_source
+ARG version
+LABEL version=$version
+ENV APT_SOURCE $apt_source
+RUN /usr/bin/apt-source.sh
+
+
+RUN apt-get update && apt-get upgrade -y
+
+RUN apt-get install -y apache2 php7.4 libapache2-mod-php7.4
+
+RUN apt-get install nmap -y
+
+RUN apt update 
+
+RUN apt install ncat -y
+
+RUN a2enmod rewrite
+
+EXPOSE 80
+
+ADD $labdir/$imagedir/sys_tar/sys.tar /
+ADD $labdir/sys_$lab.tar.gz /
+
+RUN useradd -ms /bin/bash $user_name
+RUN echo "$user_name:$password" | chpasswd
+RUN adduser $user_name sudo
+
+USER $user_name
+ENV HOME /home/$user_name
+
+ADD $labdir/$imagedir/home_tar/home.tar $HOME
+
+RUN rm -f $HOME/home.tar
+ADD $labdir/$lab.tar.gz $HOME
+
+USER root
+CMD ["apachectl", "-D", "FOREGROUND"]
+
+RUN chown www-data:www-data /var/www/html/assets/
+
+# RUN /etc/myNote.txt /home/$user_name/myNote.txts
+# RUN rm /home/$user_name/web-server.tar
